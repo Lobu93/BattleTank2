@@ -1,11 +1,11 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 #include "TankTrack.h"
-//#include "GameFramework/Actor.h"
+#include "Engine/World.h"
 
 UTankTrack::UTankTrack()
 {
-	PrimaryComponentTick.bCanEverTick = true;
+	PrimaryComponentTick.bCanEverTick = false;
 }
 
 void UTankTrack::BeginPlay()
@@ -15,14 +15,16 @@ void UTankTrack::BeginPlay()
 
 void UTankTrack::OnHit(UPrimitiveComponent * HitComponent, AActor * OtherActor, UPrimitiveComponent * OtherCompoenent, FVector NormalImpulse, const FHitResult & Hit)
 {
-	UE_LOG(LogTemp, Warning, TEXT("I'm hit, I'm hit!"))
+	DriveTrack();
+	ApplySidewaysForce();
+	CurrentThrottle = 0;
 }
 
-void UTankTrack::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction * ThisTickFunction)
+void UTankTrack::ApplySidewaysForce()
 {
-	auto SlippageSpeed = FVector::DotProduct(GetRightVector(), GetComponentVelocity());
-	
 	// Work-out the required acceleration this frame to correct
+	auto SlippageSpeed = FVector::DotProduct(GetRightVector(), GetComponentVelocity());
+	auto DeltaTime = GetWorld()->GetDeltaSeconds();
 	auto CorrectionAcceration = -SlippageSpeed / DeltaTime * GetRightVector();
 
 	// Calculate and apply sideways (F = m a)
@@ -33,8 +35,13 @@ void UTankTrack::TickComponent(float DeltaTime, ELevelTick TickType, FActorCompo
 
 void UTankTrack::SetThrottle(float Throttle)
 {
+	CurrentThrottle = FMath::Clamp<float>(CurrentThrottle + Throttle, -1, 1);
+}
+
+void UTankTrack::DriveTrack()
+{
 	// TODO clamp actual throttle value so player can't over-drive
-	auto ForceApplied = GetForwardVector() * Throttle * TrackMaxDrivingForce;
+	auto ForceApplied = GetForwardVector() * CurrentThrottle * TrackMaxDrivingForce;
 	auto ForceLocation = GetComponentLocation();
 	auto TankRoot = Cast<UPrimitiveComponent>(GetOwner()->GetRootComponent());
 	TankRoot->AddForceAtLocation(ForceApplied, ForceLocation);
