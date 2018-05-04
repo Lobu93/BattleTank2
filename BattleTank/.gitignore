@@ -74,5 +74,4 @@ Intermediate/*
 # Cache files for the editor to use
 DerivedDataCache/*
 
-# UE4 Assets
-Content/StarterContent/*
+BattleTank.VC.VC.opendb
